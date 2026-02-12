@@ -63,17 +63,24 @@ selected_provinces = st.sidebar.multiselect("Select Province(s)", all_provinces)
 
 # 2. District (Dependent on Province)
 if selected_provinces:
-    filtered_for_districts = df[df['Province'].isin(selected_provinces)]
-    available_districts = sorted(filtered_for_districts['District'].unique().tolist())
+    df_filtered_step1 = df[df['Province'].isin(selected_provinces)]
+    available_districts = sorted(df_filtered_step1['District'].unique().tolist())
 else:
+    df_filtered_step1 = df # No province filter
     available_districts = sorted(df['District'].unique().tolist())
     
 selected_districts = st.sidebar.multiselect("Select District(s)", available_districts)
 
-# 3. Tribe Filter
-# Extract unique tribes
+# Apply District Filter for next steps
+if selected_districts:
+    df_filtered_step2 = df_filtered_step1[df_filtered_step1['District'].isin(selected_districts)]
+else:
+    df_filtered_step2 = df_filtered_step1
+
+# 3. Tribe Filter (Dependent on Prov/Dist)
+# Extract unique tribes from the filtered dataset
 all_tribes = set()
-for x in df['Tribes'].dropna():
+for x in df_filtered_step2['Tribes'].dropna():
     if x:
         for t in str(x).split(','):
             t_clean = t.strip()
@@ -83,10 +90,10 @@ sorted_tribes = sorted(list(all_tribes))
 
 selected_tribes = st.sidebar.multiselect("Select Tribe(s)", sorted_tribes)
 
-# 4. Ethnicity Filter
-# Extract unique ethnicities
+# 4. Ethnicity Filter (Dependent on Prov/Dist)
+# Extract unique ethnicities from the filtered dataset
 all_ethnicities = set()
-for x in df['Ethnicity'].dropna():
+for x in df_filtered_step2['Ethnicity'].dropna():
     if x:
         for e in str(x).split(','):
             e_clean = e.strip()
