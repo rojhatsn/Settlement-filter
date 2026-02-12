@@ -21,7 +21,7 @@ st.markdown("Filter Turkey settlements by Ethinicity, Tribe, and Location for uM
 def load_data():
     try:
         # data is utf-16 based on previous steps
-        df = pd.read_csv("Turkey_Settlements_Nisanyanmap.csv", encoding="utf-16")
+        df = pd.read_csv("Turkey_Settlements_Detailed.csv", encoding="utf-16")
         
         # Parse Coordinates: "[lat, lon]" -> lat, lon
         def parse_coords(coord_str):
