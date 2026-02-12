@@ -77,20 +77,7 @@ if selected_districts:
 else:
     df_filtered_step2 = df_filtered_step1
 
-# 3. Tribe Filter (Dependent on Prov/Dist)
-# Extract unique tribes from the filtered dataset
-all_tribes = set()
-for x in df_filtered_step2['Tribes'].dropna():
-    if x:
-        for t in str(x).split(','):
-            t_clean = t.strip()
-            if t_clean:
-                all_tribes.add(t_clean)
-sorted_tribes = sorted(list(all_tribes))
-
-selected_tribes = st.sidebar.multiselect("Select Tribe(s)", sorted_tribes)
-
-# 4. Ethnicity Filter (Dependent on Prov/Dist)
+# 3. Ethnicity Filter (Dependent on Prov/Dist)
 # Extract unique ethnicities from the filtered dataset
 all_ethnicities = set()
 for x in df_filtered_step2['Ethnicity'].dropna():
@@ -102,6 +89,30 @@ for x in df_filtered_step2['Ethnicity'].dropna():
 sorted_ethnicities = sorted(list(all_ethnicities))
 
 selected_ethnicities = st.sidebar.multiselect("Select Ethnicity", sorted_ethnicities)
+
+# Apply Ethnicity Filter for Tribe options
+if selected_ethnicities:
+    # Filter df for tribes based on selected ethnicities
+    # We need rows that contain ANY of the selected ethnicities
+    import re
+    eth_pattern = '|'.join([re.escape(e) for e in selected_ethnicities])
+    df_filtered_step3 = df_filtered_step2[df_filtered_step2['Ethnicity'].str.contains(eth_pattern, case=False, na=False)]
+else:
+    df_filtered_step3 = df_filtered_step2
+
+
+# 4. Tribe Filter (Dependent on Prov/Dist + Ethnicity)
+# Extract unique tribes from the filtered dataset
+all_tribes = set()
+for x in df_filtered_step3['Tribes'].dropna():
+    if x:
+        for t in str(x).split(','):
+            t_clean = t.strip()
+            if t_clean:
+                all_tribes.add(t_clean)
+sorted_tribes = sorted(list(all_tribes))
+
+selected_tribes = st.sidebar.multiselect("Select Tribe(s)", sorted_tribes)
 
 # 5. Other Filters
 name_search = st.sidebar.text_input("Search Name / Old Name")
