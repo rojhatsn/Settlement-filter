@@ -9,7 +9,7 @@ st.set_page_config(page_title="Nisanyan Settlement Filter", layout="wide", page_
 # Display Logo
 col1, col2 = st.columns([1, 8])
 with col1:
-    st.image("logo.png", width=80)
+    st.image("logo.png", width=50)
 with col2:
     st.title("Nisanyan Settlement Filter by KDP")
 
@@ -142,9 +142,44 @@ tab1, tab2 = st.tabs(["📍 Map View", "📄 Data Table"])
 
 with tab1:
     # Map requires lat/lon columns and no NaNs
-    map_data = filtered_df.dropna(subset=['latitude', 'longitude'])
+    map_data = filtered_df.dropna(subset=['latitude', 'longitude']).copy()
+    
+    # Dynamic Coloring Logic
+    # Default color (Red)
+    map_data['color'] = '#FF0000'
+    
+    # If multiple tribes selected, assign distinct colors
+    if selected_tribes and len(selected_tribes) > 0:
+        # distinct colors palette (hex)
+        palette = [
+            '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#00FFFF', '#FF00FF', 
+            '#FFA500', '#800080', '#008000', '#000080', '#800000', '#008080'
+        ]
+        
+        tribe_color_map = {}
+        for idx, t in enumerate(selected_tribes):
+            tribe_color_map[t] = palette[idx % len(palette)]
+            
+        # Display Legend
+        st.markdown("**Color Legend:**")
+        cols = st.columns(len(selected_tribes))
+        for idx, t in enumerate(selected_tribes):
+            color = tribe_color_map[t]
+            cols[idx % len(cols)].markdown(f":large_blue_circle: <span style='color:{color}'>**{t}**</span>", unsafe_allow_html=True)
+            
+        # Apply colors to rows
+        def get_color(row_tribes):
+            if not isinstance(row_tribes, str):
+                return '#FF0000'
+            for t in selected_tribes:
+                if t in row_tribes:
+                    return tribe_color_map[t]
+            return '#FF0000'
+            
+        map_data['color'] = map_data['Tribes'].apply(get_color)
+
     if not map_data.empty:
-        st.map(map_data, size=20, color='#FF0000')
+        st.map(map_data, size=20, color='color')
     else:
         st.warning("No coordinates found to plot.")
 
