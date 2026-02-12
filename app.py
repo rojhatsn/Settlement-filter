@@ -4,9 +4,16 @@ import ast
 import base64
 
 # Set page config
-st.set_page_config(page_title="Nisanyan Settlement Filter", layout="wide")
+st.set_page_config(page_title="Nisanyan Settlement Filter", layout="wide", page_icon="logo.png")
 
-st.title("🗺️ Nisanyan Settlement Filter by KDP")
+# Display Logo
+col1, col2 = st.columns([1, 8])
+with col1:
+    st.image("logo.png", width=80)
+with col2:
+    st.title("Nisanyan Settlement Filter by KDP")
+
+st.logo("logo.png")
 st.markdown("Filter Turkey settlements by Ethinicity, Tribe, and Location for uMap export.")
 
 # --- Data Loading ---
