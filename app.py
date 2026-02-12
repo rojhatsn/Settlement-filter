@@ -215,19 +215,73 @@ with tab1:
 with tab2:
     st.dataframe(filtered_df)
 
+import zipfile
+import io
+
 # --- Export ---
 st.sidebar.markdown("---")
 st.sidebar.header("Export")
+
+export_format = st.sidebar.radio("Export Format", ["Single CSV", "Separate Sheets (ZIP)"])
 
 @st.cache_data
 def convert_df(df):
     return df.to_csv(index=False).encode('utf-8')
 
-csv = convert_df(filtered_df)
+def create_zip(filtered_df, split_col):
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+        # Get unique values in the split column
+        # Handle comma-separated values by iterating and filtering
+        # Actually, for the map layer logic, it's best if we iterate the *selected* filters
+        # because a single row might belong to multiple groups.
+        # But uMap points can only belong to one layer usually. 
+        # So we will iterate the selected items and create a file for each.
+        # If a point is in multiple, it will appear in multiple layers (which is fine/good).
+        
+        groups = []
+        if split_col == "Tribes" and selected_tribes:
+            groups = selected_tribes
+        elif split_col == "Ethnicity" and selected_ethnicities:
+            groups = selected_ethnicities
+        
+        if not groups:
+            # Fallback to categorical unique values if no filter selected but split requested
+            # This is complex for comma-sep. Let's stick to selected filters for now or simple unique.
+            # If nothing selected, maybe just one big file.
+             zip_file.writestr("ALL_Settlements.csv", filtered_df.to_csv(index=False).encode('utf-8'))
+        else:
+            for group in groups:
+                # Filter rows containing this group
+                # Use word boundary or simple contains
+                subset = filtered_df[filtered_df[split_col].str.contains(group, case=False, na=False)]
+                if not subset.empty:
+                    # Clean filename
+                    safe_name = "".join([c for c in group if c.isalnum() or c in (' ','-','_')]).strip()
+                    zip_file.writestr(f"{split_col}_{safe_name}.csv", subset.to_csv(index=False).encode('utf-8'))
+                    
+    return zip_buffer.getvalue()
 
-st.sidebar.download_button(
-    label="Download Filtered CSV",
-    data=csv,
-    file_name='filtered_settlements_umap.csv',
-    mime='text/csv',
-)
+if export_format == "Single CSV":
+    csv = convert_df(filtered_df)
+    st.sidebar.download_button(
+        label="Download CSV",
+        data=csv,
+        file_name='nisanyan_map_export.csv',
+        mime='text/csv',
+    )
+else:
+    # Determine split criteria
+    split_by = "Tribes" if selected_tribes else ("Ethnicity" if selected_ethnicities else None)
+    
+    if split_by:
+        st.sidebar.info(f"Splitting by: {split_by}")
+        zip_data = create_zip(filtered_df, split_by)
+        st.sidebar.download_button(
+            label="Download ZIP (Layers)",
+            data=zip_data,
+            file_name='nisanyan_layers.zip',
+            mime='application/zip',
+        )
+    else:
+        st.sidebar.warning("Select Tribes or Ethnicities to enable splitting.")
