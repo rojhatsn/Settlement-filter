@@ -177,6 +177,35 @@ with tab1:
             return '#FF0000'
             
         map_data['color'] = map_data['Tribes'].apply(get_color)
+        
+    elif selected_ethnicities and len(selected_ethnicities) > 0:
+        # distinct colors palette (hex)
+        palette = [
+            '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#00FFFF', '#FF00FF', 
+            '#FFA500', '#800080', '#008000', '#000080', '#800000', '#008080'
+        ]
+        
+        eth_color_map = {}
+        for idx, e in enumerate(selected_ethnicities):
+            eth_color_map[e] = palette[idx % len(palette)]
+            
+        # Display Legend
+        st.markdown("**Color Legend (Ethnicity):**")
+        cols = st.columns(len(selected_ethnicities))
+        for idx, e in enumerate(selected_ethnicities):
+            color = eth_color_map[e]
+            cols[idx % len(cols)].markdown(f":large_blue_circle: <span style='color:{color}'>**{e}**</span>", unsafe_allow_html=True)
+            
+        # Apply colors to rows
+        def get_eth_color(row_eth):
+            if not isinstance(row_eth, str):
+                return '#FF0000'
+            for e in selected_ethnicities:
+                if e in row_eth:
+                    return eth_color_map[e]
+            return '#FF0000'
+            
+        map_data['color'] = map_data['Ethnicity'].apply(get_eth_color)
 
     if not map_data.empty:
         st.map(map_data, size=20, color='color')
